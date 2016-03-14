@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     compile 'io.reactivex:rxjava:1.1.1'
+    compile 'io.reactivex:rxjavafx:0.0.4'
 
     // Retrofit
     compile 'com.squareup.retrofit2:retrofit:2.0.0-beta4'

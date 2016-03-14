@@ -12,7 +12,14 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ro.tpg.tmjug.omdb.ApiService;
+import ro.tpg.tmjug.omdb.OmdbApi;
 import ro.tpg.tmjug.omdb.OmdbMovie;
+import ro.tpg.tmjug.util.RxLog;
+import rx.Subscription;
+import rx.observables.JavaFxObservable;
+import rx.schedulers.JavaFxScheduler;
+import rx.subscriptions.CompositeSubscription;
 
 import java.util.List;
 
@@ -24,6 +31,10 @@ public class SearchMovieApp extends Application {
     private ListView<OmdbMovie> moviesListView;
     private MovieDetailsView movieDetailsView;
 
+    private final CompositeSubscription subscriptions = new CompositeSubscription();
+
+    private OmdbApi apiService;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -33,18 +44,46 @@ public class SearchMovieApp extends Application {
 
         setUp(primaryStage);
 
-        movieTitleInputField.textProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                    logger.debug(newValue);
+        apiService = ApiService.getApi();
 
-                    // Use the updateMovies method to update the list
-                }
-        );
+        final Subscription hotSearchSubscription = JavaFxObservable.fromObservableValue(movieTitleInputField.textProperty())
+                .filter(title -> title.length() > 1)
+                .compose(RxLog::log)
+                .observeOn(JavaFxScheduler.getInstance())
+                .subscribe(
+                        movieTitle -> {
+                            logger.debug(movieTitle);
+                        },
+                        throwable -> logger.error(throwable.getMessage())
+                );
+        subscriptions.add(hotSearchSubscription);
+
+        // Subscribe to item selection
+        final Subscription movieDetailsSubscription = JavaFxObservable.fromObservableValue(moviesListView.getSelectionModel().selectedItemProperty())
+                .filter(selection -> selection != null)
+                // 1. Get a movie by title using the ApiService -> you should get an OmdbMovieDetails object
+                .subscribe(movieDetails -> {
+
+                    logger.debug("Selected: {}", movieDetails);
+
+                    // 2. Display the movie details using the MovieDetailsView stage
+                    // movieDetailsView.updateDetails(movieDetails);
+                });
+        subscriptions.add(movieDetailsSubscription);
     }
 
     private void updateMoviesList(final List<OmdbMovie> movies) {
         moviesListView.getItems().clear();
-        moviesListView.getItems().addAll(movies);
+        if (movies != null) {
+            moviesListView.getItems().addAll(movies);
+        }
+    }
+
+    @Override
+    public void stop() throws Exception {
+        if (subscriptions != null) {
+            subscriptions.unsubscribe();
+        }
     }
 
     private void setUp(Stage primaryStage) {
