@@ -12,10 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ro.tpg.tmjug.omdb.ApiService;
-import ro.tpg.tmjug.omdb.OmdbApi;
 import ro.tpg.tmjug.omdb.OmdbMovie;
-import ro.tpg.tmjug.util.RxLog;
 import rx.Subscription;
 import rx.observables.JavaFxObservable;
 import rx.schedulers.JavaFxScheduler;
@@ -33,7 +30,7 @@ public class SearchMovieApp extends Application {
 
     private final CompositeSubscription subscriptions = new CompositeSubscription();
 
-    private OmdbApi apiService;
+    private final MovieService movieService = MovieService.getMovieService();
 
     public static void main(String[] args) {
         launch(args);
@@ -44,18 +41,12 @@ public class SearchMovieApp extends Application {
 
         setUp(primaryStage);
 
-        apiService = ApiService.getApi();
-
         final Subscription hotSearchSubscription = JavaFxObservable.fromObservableValue(movieTitleInputField.textProperty())
-                .filter(title -> title.length() > 1)
-                .compose(RxLog::log)
+                .compose(movieService::searchMovie)
                 .observeOn(JavaFxScheduler.getInstance())
-                .subscribe(
-                        movieTitle -> {
-                            logger.debug(movieTitle);
-                        },
-                        throwable -> logger.error(throwable.getMessage())
-                );
+                .subscribe(searchResult -> {
+                    updateMoviesList(searchResult.movies);
+                });
         subscriptions.add(hotSearchSubscription);
 
         // Subscribe to item selection
