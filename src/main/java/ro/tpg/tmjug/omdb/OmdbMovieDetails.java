@@ -24,6 +24,8 @@ public class OmdbMovieDetails extends OmdbMovie {
 
     public String imdbRating;
 
+    public OmdbMovieDetails() {}
+
     @Override
     public String toString() {
         return "OmdbMovieDetails{" +

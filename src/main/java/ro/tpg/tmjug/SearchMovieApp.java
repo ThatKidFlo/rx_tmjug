@@ -12,10 +12,13 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ro.tpg.tmjug.omdb.ApiService;
 import ro.tpg.tmjug.omdb.OmdbMovie;
+import ro.tpg.tmjug.omdb.OmdbMovieDetails;
 import rx.Subscription;
 import rx.observables.JavaFxObservable;
 import rx.schedulers.JavaFxScheduler;
+import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
 import java.util.List;
@@ -52,14 +55,13 @@ public class SearchMovieApp extends Application {
         // Subscribe to item selection
         final Subscription movieDetailsSubscription = JavaFxObservable.fromObservableValue(moviesListView.getSelectionModel().selectedItemProperty())
                 .filter(selection -> selection != null)
-                // 1. Get a movie by title using the ApiService -> you should get an OmdbMovieDetails object
-                .subscribe(movieDetails -> {
-
-                    logger.debug("Selected: {}", movieDetails);
-
-                    // 2. Display the movie details using the MovieDetailsView stage
-                    // movieDetailsView.updateDetails(movieDetails);
-                });
+                .map(selection -> selection.title)
+                .switchMap(title -> ApiService.getApi().getByTitle(title).subscribeOn(Schedulers.io()))
+                .observeOn(JavaFxScheduler.getInstance())
+                .subscribe(
+                        movieDetails -> movieDetailsView.updateDetails(movieDetails),
+                        throwable -> logger.error(throwable.getMessage())
+                );
         subscriptions.add(movieDetailsSubscription);
     }
 

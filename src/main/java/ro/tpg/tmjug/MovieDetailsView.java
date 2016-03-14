@@ -43,8 +43,10 @@ public class MovieDetailsView extends ScrollPane {
     }
 
     public void updateDetails(final OmdbMovieDetails movie) {
-        final Image posterImage = new Image(movie.posterUri.toString());
-        posterImageView.setImage(posterImage);
+        try {
+            final Image posterImage = new Image(movie.posterUri.toString());
+            posterImageView.setImage(posterImage);
+        } catch (Throwable t) { }
 
         imdbRating.setText("Rating:\n" + movie.imdbRating);
         director.setText("Director:\n" + movie.director);
