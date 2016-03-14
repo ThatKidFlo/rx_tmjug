@@ -12,6 +12,13 @@ repositories {
 dependencies {
     compile 'io.reactivex:rxjava:1.1.1'
 
+    // Retrofit
+    compile 'com.squareup.retrofit2:retrofit:2.0.0-beta4'
+    compile 'com.squareup.retrofit2:adapter-rxjava:2.0.0-beta4'
+    compile 'com.squareup.retrofit2:converter-gson:2.0.0-beta4'
+    compile 'com.squareup.okhttp3:okhttp:3.1.2'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.1.2'
+
     // slf4j - logging library
     compile 'org.slf4j:slf4j-api:1.7.18'
     compile group: 'ch.qos.logback', name:'logback-classic', version: '1.0.13'
