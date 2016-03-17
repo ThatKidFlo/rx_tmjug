@@ -7,6 +7,7 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func1;
 import rx.observers.TestSubscriber;
+import rx.schedulers.Schedulers;
 
 import java.util.concurrent.TimeUnit;
 
@@ -64,5 +65,47 @@ public class ExampleUnitTest {
         testSubscriber.assertNoErrors();
         testSubscriber.assertValueCount(5);
         testSubscriber.assertValues(0L, 2L, 4L, 6L, 8L);
+    }
+
+
+    private class Person {
+        int index;
+
+        public Person(int index) {
+            this.index = index;
+        }
+    }
+
+    @Test
+    public void testMultiThreading() {
+
+        TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+
+        Observable.range(1, 100)
+                .map((index) -> {
+                    final Person p = new Person(index);
+                    logger.debug("[Map-to-person] :: {} :: {}", index, p);
+                    return p;
+                })
+                .observeOn(Schedulers.newThread())
+                .filter(p -> {
+
+                    logger.debug("[Filter] :: {} :: {}", p.index, p);
+                    return p.index % 2 == 0;
+                })
+                .observeOn(Schedulers.newThread())
+                .map(p -> {
+                    logger.debug("[Map-to-string] :: {} :: {}", p.index, p);
+                    return "Person " + p.index;
+                })
+                .subscribeOn(Schedulers.computation())
+                .subscribe(testSubscriber);
+
+        testSubscriber.awaitTerminalEvent();
+
+        testSubscriber.assertCompleted();
+        testSubscriber.assertUnsubscribed();
+        testSubscriber.assertNoErrors();
+        testSubscriber.assertValueCount(50);
     }
 }
