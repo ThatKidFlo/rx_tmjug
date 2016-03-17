@@ -12,9 +12,11 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ro.tpg.tmjug.file.RxFileUtil;
 import ro.tpg.tmjug.omdb.ApiService;
 import ro.tpg.tmjug.omdb.OmdbMovie;
 import ro.tpg.tmjug.omdb.OmdbMovieDetails;
+import rx.Observable;
 import rx.Subscription;
 import rx.observables.JavaFxObservable;
 import rx.schedulers.JavaFxScheduler;
@@ -36,7 +38,24 @@ public class SearchMovieApp extends Application {
     private final MovieService movieService = MovieService.getMovieService();
 
     public static void main(String[] args) {
+
+        rxFileWriterDemo();
         launch(args);
+    }
+
+    private static final int MAX_FILE_WRITE_CONCURRENT = 10;
+    private static void rxFileWriterDemo() {
+        Observable.range(1, 1000)
+                .map(index -> "f" + index + ".txt")
+                .flatMap(fileName ->
+                        RxFileUtil.writeToFile(fileName, fileName + " :: content").subscribeOn(Schedulers.io()),
+                        MAX_FILE_WRITE_CONCURRENT
+                )
+                .subscribe(
+                        result -> logger.debug("Write result: {}", result),
+                        error -> logger.error("Write error: {}", error.getMessage()),
+                        () -> logger.debug("All files successfully written!")
+                );
     }
 
     @Override
